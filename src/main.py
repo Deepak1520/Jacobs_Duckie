@@ -9,7 +9,7 @@ from sensor_msgs.msg import CompressedImage
 import matplotlib.pyplot as plt
 import cv2
 import time
-from utils import ht, ball_grid_detector
+from utils import ht, line_grid_detector
 grid = 1
 
 class ImageSub():
@@ -25,18 +25,18 @@ class ImageSub():
 
     def callback(self, msg):
         """
-        Take image, detect circles, follow
+        Take image, detect , follow
         """
         np_arr = np.fromstring(msg.data, np.uint8)
         image_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
-        res_from_ht, circles, centers = ht(image_np, self.threshold)
-        if not circles:
+        res_from_ht, points = ht(image_np, self.threshold)
+        if not points:
             self.threshold = max(5, self.threshold - 2)
-        elif circles > 1:
+        elif points > 1:
             self.threshold = min(500, self.threshold + 1)
         else:
-            pos = ball_grid_detector(image_np.shape, centers)
+            pos = line_grid_detector(image_np.shape,point )
             print("Grid idx pos: {}".format(pos))
             grid = (pos - 1) % 3
                    

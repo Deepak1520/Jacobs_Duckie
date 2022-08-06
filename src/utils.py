@@ -1,8 +1,9 @@
 import pathlib
-import cv2
+import cv2 as cv
 import numpy as np
+import matplotlib.pyplot as plt
 
-def ball_grid_detector(frame_shape, circle_center):
+def line_grid_detector(frame_shape, point):
     '''
     takes a frame and a center of a circle and determines in which 
     position of the grid the object is
@@ -11,7 +12,7 @@ def ball_grid_detector(frame_shape, circle_center):
     H = frame_shape[1]
     ww = H//3 
     vv = V//3
-    x,y = circle_center[0]
+    x,y = point[0]
     if x < ww:
         if y < vv:
             return 1
@@ -38,18 +39,36 @@ def ht(img, threshold):
     """
     Performs hough transform with specified threshold
     """
-    img = cv2.medianBlur(img,5)
-    cimg = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
-    circles = cv2.HoughCircles(img,cv2.HOUGH_GRADIENT,1,100,
-                            param1=threshold,param2=30,minRadius=10,maxRadius=80)
-    try:
-        circles = np.uint16(np.around(circles))
-        centers = []
-        for i in circles[0,:]:
-            centers.append((i[0],i[1]))
-            cv2.circle(cimg,(i[0],i[1]),i[2],(0,255,0),2)
-            cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),3)
-    except:
-        return cimg, 0, []
+    def houghline(image,thd):
+    
+        raw_img = cv.imread(img)
+        noise_free_img=cv.medianBlur(raw_img,5)
+        img=cv.cvtColor(noise_free_img,cv.COLOR_BGR2GRAY)
+        plt.imshow(img)
+        edges = cv.Canny(img,50,150,apertureSize=3)
 
-    return cimg, len(circles[0,:]), centers
+        # Apply HoughLinesP method to
+        # to directly obtain line end points
+        lines_list =[]
+        lines = cv.HoughLinesP(
+                    edges, # Input edge image
+                    1, # Distance resolution in pixels
+                    np.pi/180, # Angle resolution in radians
+                    threshold=100, # Min number of votes for valid line
+                    minLineLength=90, # Min allowed length of line
+                    maxLineGap=40 # Max allowed gap between line for joining them
+                    )
+
+        # Iterate over points
+        for points in lines:
+            # Extracted points nested in the list
+            x1,y1,x2,y2=points[0]
+            # Draw the lines joing the points
+            # On the original image
+            cv.line(image,(x1,y1),(x2,y2),(0,255,0),2)
+            # Maintain a simples lookup list for points
+            lines_list.append([(x1,y1),(x2,y2)])
+            plt.imshow(image)
+        
+        return image,lines    
+
